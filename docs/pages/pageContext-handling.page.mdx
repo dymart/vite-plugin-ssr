@@ -1,0 +1,61 @@
+export const noHeading = true
+export const pageTitle = <>Handling <code>pageContext</code></>
+
+Most hooks, e.g. [`onBeforeRender()`](/onBeforeRender), enable us to extend `pageContext`.
+
+```js
+// .page.server.js
+
+export { onBeforeRender }
+
+function onBeforeRender(pageContext) {
+  // We usually use `onBeforeRender()` to fetch data
+  const starWarsMovies = await fetch('https://star-wars.brillout.com/api/films.json')
+  return {
+    pageContext: {
+      // We make `starWarsMovies` available at `pageContext.starWarsMovies`
+      starWarsMovies,
+    }
+  }
+}
+```
+
+## Do not mutate `pageContext`
+
+> **Why?** Mutations makes reasing harder; it is easier to think in terms of extending an immutable object.
+>
+> For example, when we see a hook with `return { pageContext: { starWarsMovies }} }` then we know exactly that the value `pageContext.starWarsMovies` comes from that hook and only that hook.
+
+## Do not return entire `pageContext`
+
+We also shouldn't do this:
+
+```diff
+  // .page.server.js
+
+  export { onBeforeRender }
+
+  function onBeforeRender(pageContext) {
+    return {
+-     pageContext: {
+-       ...pageContext,
+-       starWarsMovies
+-     }
++     // Do this instead
++     pageContext: {
++       starWarsMovies
++     }
+    }
+  }
+```
+
+> **Why?** See argument above about why we shouldn't mutate `pageContext`.
+
+## Extend instead of replacing
+
+In general, we should *extend* `pageContext` instead of replacing already existing properties.
+
+That 
+
+## Replacing exceptions
+
