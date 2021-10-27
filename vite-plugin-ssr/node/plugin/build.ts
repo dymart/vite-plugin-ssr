@@ -104,10 +104,19 @@ function getRoot(config: UserConfig): string {
 
 function getOutDir(config: UserConfig): string {
   let outDir = config.build?.outDir
+  let client = ''
+  let server = ''
+  // let serverDir = config.build?.serverDir
   if (!outDir) {
     outDir = 'dist'
+    client = '/client'
+    server = '/server'
   }
-  return config.build?.ssr ? `${outDir}/server` : `${outDir}/client`
+  // return config.build?.ssr ? `${serverDir}/server` : `${outDir}/client`
+  // this controls where vite build --ssr and vite build output
+  // return config.build?.ssr ? `${outDir}/server` : `${outDir}/client`
+  return config.build?.ssr ? `${outDir}${server}` : `${outDir}${client}`
+  // return config.build?.ssr ? `${outDir}` : `${outDir}`
 }
 
 function posixPath(path: string): string {

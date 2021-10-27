@@ -15,7 +15,18 @@ async function setPageFiles(): Promise<unknown> {
   const userDist = `${ssrEnv.root}/${ssrEnv.outDir}`
   // Current directory: vite-plugin-ssr/dist/cjs/node/page-files/
   const pluginDist = `../../../../${ssrEnv.outDir}`
-  const prodPath = `${userDist}/server/${viteEntryFile}`
+  let path: string = ''
+  if (ssrEnv.serverDir == "server" && ssrEnv.outDir == "dist")
+  {
+    path = `${userDist}/${ssrEnv.serverDir}/${viteEntryFile}`
+  } else
+  {
+    path = `${ssrEnv.root}/${ssrEnv.serverDir}/${viteEntryFile}`
+  }
+
+  const prodPath = path
+  // const prodPath = `${ssrEnv.root}/${ssrEnv.serverDir}/server/${viteEntryFile}`
+  // const prodPath = `${ssrEnv.root}/${ssrEnv.serverDir}/${viteEntryFile}`
   const devPath = `${pluginDist}/esm/node/page-files/${viteEntryFile}`
 
   const errorMessage =

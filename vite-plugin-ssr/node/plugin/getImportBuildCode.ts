@@ -1,4 +1,8 @@
 export { getImportBuildCode }
+// import { getSsrEnv } from '../ssrEnv'
+
+// const { serverDir } = getSsrEnv()
+// const serverManifest = require("../../${serverDir}/server/manifest.json");
 
 function getImportBuildCode(): string {
   return `const { pageFiles } = require("./pageFiles.js");

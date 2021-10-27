@@ -20,6 +20,14 @@ cli
     '--outDir <path>',
     '[string] vite output directory of your project (default: `dist`)'
   )
+  .option(
+    '--serverDir <path>',
+    '[string] the directory of vite build --ssr output (default: `dist/server`)'
+  )
+  .option(
+    '--writeOutDir <path>',
+    '[string] the directory where files will be written (default: `dist/client`)'
+  )
   .option('--client-router', 'serialize `pageContext` to JSON files for Client Routing')
   .option('--base <path>', '[string] public base path (default: /)')
   .option(
@@ -27,10 +35,10 @@ cli
     '[number] Number of jobs running in parallel. Default: `os.cpus().length`. Set to `1` to disable concurrency.'
   )
   .action(async (options) => {
-    const { partial, extraDir, clientRouter, base, parallel, outDir } = options
+    const { partial, extraDir, clientRouter, base, parallel, outDir, serverDir, writeOutDir } = options
     const root = options.root && resolve(options.root)
     const noExtraDir = !extraDir
-    await prerender({ partial, noExtraDir, clientRouter, base, root, parallel, outDir })
+    await prerender({ partial, noExtraDir, clientRouter, base, root, parallel, outDir, serverDir, writeOutDir })
   })
 
 // Listen to unknown commands

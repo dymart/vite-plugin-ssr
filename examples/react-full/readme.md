@@ -22,3 +22,13 @@ cd vite-plugin-ssr/examples/react-full/
 npm install
 npm run start
 ```
+
+
+
+npx vite build --outDir=testClient
+
+npx vite build --ssr --outDir=testServer
+
+npx vite-plugin-ssr prerender --outDir=testClient --serverDir=testServer --writeOutDir=testOut
+
+then move the assets folder from testClient to testOut

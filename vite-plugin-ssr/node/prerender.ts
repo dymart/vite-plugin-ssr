@@ -60,12 +60,16 @@ type PageContext = GlobalPrerenderingContext & {
  * @param partial Allow only a subset of pages to be pre-rendered.
  * @param root The root directory of your project (where `vite.config.js` and the output directory live) (default: `process.cwd()`).
  * @param outDir The vite output directory of your project (default: `dist`).
+ * @param serverDir The vite output directory of vite build --ssr (default: `dist`).
+ * @param writeOutDir The vite output directory of vite build (default: `dist/client`).
  */
 async function prerender({
   partial = false,
   noExtraDir = false,
   root = process.cwd(),
   outDir = 'dist',
+  serverDir = 'server',
+  writeOutDir = 'client',
   clientRouter = false,
   parallel = cpus().length,
   base
@@ -74,11 +78,13 @@ async function prerender({
   noExtraDir?: boolean
   root?: string
   outDir?: string
+  serverDir?: string
+  writeOutDir?: string
   clientRouter?: boolean
   base?: string
   parallel?: number
 } = {}) {
-  assertArguments(partial, noExtraDir, clientRouter, base, root, outDir, parallel)
+  assertArguments(partial, noExtraDir, clientRouter, base, root, outDir, serverDir, writeOutDir, parallel)
   console.log(`${cyan(`vite-plugin-ssr ${projectInfo.version}`)} ${green('pre-rendering HTML...')}`)
 
   const pluginManifest = getPluginManifest(root, outDir)
@@ -88,6 +94,7 @@ async function prerender({
     isProduction: true,
     root,
     outDir,
+    serverDir,
     viteDevServer: undefined,
     baseUrl: pluginManifest.base
   })
@@ -119,7 +126,7 @@ async function prerender({
 
   console.log(`${green(`✓`)} ${htmlFiles.length} HTML documents pre-rendered.`)
 
-  await Promise.all(htmlFiles.map((htmlFile) => writeHtmlFile(htmlFile, root, outDir, doNotPrerenderList, concurrencyLimit)))
+  await Promise.all(htmlFiles.map((htmlFile) => writeHtmlFile(htmlFile, root, outDir, writeOutDir, doNotPrerenderList, concurrencyLimit)))
 
   warnMissingPages(prerenderPageIds, doNotPrerenderList, globalContext, partial)
 }
@@ -377,16 +384,17 @@ async function writeHtmlFile(
   { url, htmlString, pageContextSerialized, doNotCreateExtraDirectory, pageId }: HtmlFile,
   root: string,
   outDir: string,
+  writeOutDir: string,
   doNotPrerenderList: DoNotPrerenderList,
   concurrencyLimit: pLimit.Limit
 ) {
   assert(url.startsWith('/'))
   assert(!doNotPrerenderList.find((p) => p.pageId === pageId))
 
-  const writeJobs = [write(url, '.html', htmlString, root, outDir, doNotCreateExtraDirectory, concurrencyLimit)]
+  const writeJobs = [write(url, '.html', htmlString, root, outDir, writeOutDir, doNotCreateExtraDirectory, concurrencyLimit)]
   if (pageContextSerialized !== null) {
     writeJobs.push(
-      write(url, '.pageContext.json', pageContextSerialized, root, outDir, doNotCreateExtraDirectory, concurrencyLimit)
+      write(url, '.pageContext.json', pageContextSerialized, root, outDir, writeOutDir, doNotCreateExtraDirectory, concurrencyLimit)
     )
   }
   await Promise.all(writeJobs)
@@ -398,6 +406,7 @@ function write(
   fileContent: string,
   root: string,
   outDir: string,
+  writeOutDir: string,
   doNotCreateExtraDirectory: boolean,
   concurrencyLimit: pLimit.Limit
 ) {
@@ -406,10 +415,30 @@ function write(
     assert(fileUrl.startsWith('/'))
     const filePathRelative = fileUrl.slice(1).split('/').join(sep)
     assert(!filePathRelative.startsWith(sep))
-    const filePath = join(root, outDir, 'client', filePathRelative)
+    let filePathTemp: string = join(root, outDir, 'client', filePathRelative)
+    // const filePath = join(root, outDir, 'client', filePathRelative)
+    if (outDir != "dist") {
+      if (writeOutDir != "client"){
+        filePathTemp = join(root, writeOutDir, filePathRelative)
+      } else {
+        filePathTemp = join(root, outDir, filePathRelative)
+      }
+    }
+    // const filePath = join(root, outDir, filePathRelative)
+    const filePath = filePathTemp
     await mkdirp(dirname(filePath))
     await writeFile(filePath, fileContent)
-    console.log(`${gray(join(outDir, 'client') + sep)}${blue(filePathRelative)}`)
+    if (outDir != "dist") {
+      if (writeOutDir != "client") {
+        console.log(`${gray(join(writeOutDir) + sep)}${blue(filePathRelative)}`)
+      } else {
+        console.log(`${gray(join(outDir) + sep)}${blue(filePathRelative)}`)
+      }
+    } else {
+      console.log(`${gray(join(outDir, 'client') + sep)}${blue(filePathRelative)}`)
+    }
+    // console.log(`${gray(join(outDir, 'client') + sep)}${blue(filePathRelative)}`)
+    // console.log(`${gray(join(outDir) + sep)}${blue(filePathRelative)}`)
   })
 }
 
@@ -462,7 +491,12 @@ function getPluginManifest(root: string, outDir: string): {
   base: string
   usesClientRouter: boolean
 } {
-  const pluginManifestPath = `${root}/${outDir}/client/vite-plugin-ssr.json`
+  let pluginManPath = `${root}/${outDir}/client/vite-plugin-ssr.json`
+  if (outDir != "dist") {
+    pluginManPath = `${root}/${outDir}/vite-plugin-ssr.json`
+  }
+  // const pluginManifestPath = `${root}/${outDir}/client/vite-plugin-ssr.json`
+  const pluginManifestPath = pluginManPath
   assertUsage(
     moduleExists(pluginManifestPath),
     "You are trying to run `$ vite-plugin-ssr prerender` but you didn't build your app yet: make sure to run `$ vite build && vite build --ssr` before running the pre-rendering. (Following build manifest is missing: `" +
@@ -494,6 +528,8 @@ function assertArguments(
   base: unknown,
   root: unknown,
   outDir: unknown,
+  serverDir: unknown,
+  writeOutDir: unknown,
   parallel: number
 ) {
   assertUsage(partial === true || partial === false, '[prerender()] Option `partial` should be a boolean.')
@@ -503,5 +539,7 @@ function assertArguments(
   assertUsage(typeof root === 'string', '[prerender()] Option `root` should be a string.')
   assertUsage(isAbsolute(root), '[prerender()] The path `root` is not absolute. Make sure to provide an absolute path.')
   assertUsage(typeof outDir === 'string', '[prerender()] Option `outDir` should be a string.')
+  assertUsage(typeof serverDir === 'string', '[prerender()] Option `serverDir` should be a string.')
+  assertUsage(typeof writeOutDir === 'string', '[prerender()] Option `serverDir` should be a string.')
   assertUsage(parallel, '[prerender()] Option `parallel` should be a number `>=1`.')
 }

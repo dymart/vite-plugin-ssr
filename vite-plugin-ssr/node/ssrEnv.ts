@@ -11,6 +11,7 @@ type SsrEnv =
       viteDevServer: ViteDevServer
       root: string
       outDir: string
+      serverDir: string
       baseUrl: string
     }
   | {
@@ -18,6 +19,7 @@ type SsrEnv =
       viteDevServer: undefined
       root?: string | undefined
       outDir?: string | undefined
+      serverDir: string
       baseUrl: string
     }
 

@@ -21,6 +21,7 @@ function createPageRenderer({
   viteDevServer,
   root,
   outDir = 'dist',
+  serverDir = 'server',
   isProduction,
   base = '/'
 }: {
@@ -30,6 +31,7 @@ function createPageRenderer({
   */
   root?: string
   outDir?: string
+  serverDir?: string
   isProduction?: boolean
   base?: string
 }): RenderPage {
@@ -39,7 +41,7 @@ function createPageRenderer({
   )
   wasCalled = true
 
-  const ssrEnv = { viteDevServer, root, outDir, isProduction, baseUrl: base }
+  const ssrEnv = { viteDevServer, root, outDir, serverDir, isProduction, baseUrl: base }
   assertArguments(ssrEnv, Array.from(arguments))
   setSsrEnv(ssrEnv)
 
@@ -51,12 +53,13 @@ function assertArguments(
     viteDevServer?: unknown
     root?: unknown
     outDir?: unknown
+    serverDir?: unknown
     isProduction?: unknown
     baseUrl?: unknown
   },
   args: unknown[]
 ): asserts ssrEnv is SsrEnv {
-  const { viteDevServer, root, outDir, isProduction, baseUrl } = ssrEnv
+  const { viteDevServer, root, outDir, serverDir, isProduction, baseUrl } = ssrEnv
   assertUsage(
     root === undefined || typeof root === 'string',
     '`createPageRenderer({ root })`: argument `root` should be a string.'
@@ -64,6 +67,10 @@ function assertArguments(
   assertUsage(
     outDir === undefined || typeof outDir === 'string',
     '`createPageRenderer({ outDir })`: argument `outDir` should be a string.'
+  )
+  assertUsage(
+    serverDir === undefined || typeof serverDir === 'string',
+    '`createPageRenderer({ serverDir })`: argument `serverDir` should be a string.'
   )
   assertUsage(
     typeof baseUrl === 'string',
@@ -114,7 +121,7 @@ function assertArguments(
   assert(typeof args[0] === 'object' && args[0] !== null)
   Object.keys(args[0]).forEach((argName) => {
     assertUsage(
-      ['viteDevServer', 'root', 'outDir', 'isProduction', 'base'].includes(argName),
+      ['viteDevServer', 'root', 'outDir', 'serverDir', 'isProduction', 'base'].includes(argName),
       '`createPageRenderer()`: Unknown argument `' + argName + '`.'
     )
   })

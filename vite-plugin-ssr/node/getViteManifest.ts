@@ -27,9 +27,20 @@ function getViteManifest(): {
   clientManifestPath: string
   serverManifestPath: string
 } {
-  const { root, outDir } = getSsrEnv()
-  const clientManifestPath = `${root}/${outDir}/client/manifest.json`
-  const serverManifestPath = `${root}/${outDir}/server/manifest.json`
+  const { root, outDir, serverDir } = getSsrEnv()
+  let clientPath: string = `${root}/${outDir}/client/manifest.json`
+  let serverPath: string = `${root}/${outDir}/server/manifest.json`
+  if (outDir != "dist")
+  {
+    clientPath = `${root}/${outDir}/manifest.json`
+    serverPath = `${root}/${serverDir}/manifest.json`
+  }
+  // const clientManifestPath = `${root}/${outDir}/client/manifest.json`
+  // const clientManifestPath = `${root}/${outDir}/manifest.json`
+  // const serverManifestPath = `${root}/${serverDir}/server/manifest.json`
+  // const serverManifestPath = `${root}/${serverDir}/manifest.json`
+  const clientManifestPath = clientPath
+  const serverManifestPath = serverPath
 
   if (!clientManifest) {
     try {
